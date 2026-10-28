@@ -10,13 +10,11 @@ as the 'rl_policy' model_type.
 """
 
 import math
-import random
 import time
 import json
 import os
-from collections import deque
-from dataclasses import dataclass, field
-from typing import List, Tuple, Optional, Dict
+from dataclasses import dataclass
+from typing import List, Tuple, Dict
 import numpy as np
 
 
@@ -348,7 +346,7 @@ class SelfPlayTrainer:
 
     def run_episode(self) -> dict:
         """Run one episode of self-play, collect rollout data."""
-        from simulation.engine.sim import Simulation, TeamID, DroneConfig
+        from simulation.engine.sim import Simulation
 
         sim = Simulation(
             num_teams=self.cfg.num_teams,

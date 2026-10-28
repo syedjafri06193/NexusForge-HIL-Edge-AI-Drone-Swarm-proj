@@ -11,23 +11,22 @@ import sys
 import time
 import uuid
 from contextlib import asynccontextmanager
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Literal, Optional, Set
 
 import redis.asyncio as aioredis
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 # Add project root to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from simulation.engine.sim import (
-    Simulation, TeamID, DroneConfig, DroneState, Vec2,
-    run_simulation_loop, DT,
+    Simulation, TeamID, DroneConfig, Vec2,
+    run_simulation_loop,
 )
 from agents.swarm.orchestrator import SwarmOrchestrator, SwarmCommand, MissionType, Formation
-from firmware.protocols.hil_mqtt import HILManager, HILConfig
+from firmware.protocols.hil_mqtt import HILManager
 from firmware.fault_injection.injector import FaultInjector, FaultScenarios, FaultEvent, FaultType
 from backend.telemetry.writer import TelemetryWriter
 from firmware.tinyml.inference import DroneInferencePool
@@ -40,6 +39,9 @@ redis_client: Optional[aioredis.Redis] = None
 
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
 CORS_ORIGINS = os.getenv("CORS_ORIGINS", "*").split(",")
+# Each session runs its own 60 FPS simulation loop, so an unbounded number of
+# sessions is an easy way to exhaust the server.
+MAX_SESSIONS = int(os.getenv("MAX_SESSIONS", "16"))
 
 
 # ─── Session ──────────────────────────────────────────────────────────────────
@@ -127,7 +129,7 @@ async def lifespan(app: FastAPI):
     for session in sessions.values():
         await session.stop()
     if redis_client:
-        await redis_client.close()
+        await redis_client.aclose()
 
 
 # ─── App ──────────────────────────────────────────────────────────────────────
@@ -167,17 +169,32 @@ class NLPCommandRequest(BaseModel):
     team: str = "RED"
 
 class SpawnDroneRequest(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
+
     team: str
     model_type: str = "behavior_tree"
-    aggression: float = 0.5
-    quantization_bits: int = 8
+    aggression: float = Field(0.5, ge=0.0, le=1.0)
+    quantization_bits: Literal[4, 8, 16, 32] = 8
     mcu_type: str = "esp32"
 
 class BenchmarkRequest(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
+
     model_name: str = "obstacle_detector"
     mcu_type: str = "esp32"
-    bits: int = 8
-    n_runs: int = 100
+    bits: Literal[4, 8, 16, 32] = 8
+    # Bounded: the benchmark runs synchronously inside the request.
+    n_runs: int = Field(100, ge=1, le=10_000)
+
+
+def _check_edge_target(model_name: str, mcu_type: str) -> None:
+    """Reject unknown models/MCUs with a 400 instead of a 500 (unknown model)
+    or a silent fallback to ESP32 numbers (unknown MCU)."""
+    from firmware.tinyml.inference import MCU_PROFILES, MODELS
+    if model_name not in MODELS:
+        raise HTTPException(400, f"Unknown model: {model_name}. Known: {sorted(MODELS)}")
+    if mcu_type not in MCU_PROFILES:
+        raise HTTPException(400, f"Unknown MCU: {mcu_type}. Known: {sorted(MCU_PROFILES)}")
 
 
 # ─── Health ───────────────────────────────────────────────────────────────────
@@ -195,6 +212,8 @@ async def health():
 
 @app.post("/sessions", status_code=201)
 async def create_session(req: CreateSessionRequest):
+    if len(sessions) >= MAX_SESSIONS:
+        raise HTTPException(429, f"Session limit reached ({MAX_SESSIONS}); delete one first")
     sid = str(uuid.uuid4())[:8]
     session = GameSession(sid, req.num_teams, req.drones_per_team)
     sessions[sid] = session
@@ -335,24 +354,34 @@ async def get_hil_commands(sid: str, n: int = Query(20, le=200)):
     s = _get_session(sid)
     return {"commands": s.hil.get_recent_commands(n)}
 
+class HILPosition(BaseModel):
+    x: float
+    y: float
+
+class HILInjectRequest(BaseModel):
+    drone_id: str
+    health: Optional[float] = Field(None, ge=0.0)
+    battery_pct: Optional[float] = Field(None, ge=0.0, le=100.0)
+    pos: Optional[HILPosition] = None
+
 @app.post("/sessions/{sid}/hil/inject")
-async def inject_hil_telemetry(sid: str, payload: dict):
+async def inject_hil_telemetry(sid: str, req: HILInjectRequest):
     """
     Accept real hardware telemetry from physical ESP32 boards.
     Merges real data with simulation drone state.
     """
     s = _get_session(sid)
-    drone_id = payload.get("drone_id")
-    if drone_id and drone_id in s.sim.drones:
-        drone = s.sim.drones[drone_id]
-        # Override sim state with real hardware values
-        if "health" in payload:
-            drone.health = float(payload["health"])
-        if "pos" in payload:
-            drone.position = Vec2(payload["pos"]["x"], payload["pos"]["y"])
-        if "battery_pct" in payload:
-            drone.battery_pct = float(payload["battery_pct"])
-    return {"injected": True, "drone_id": drone_id}
+    drone = s.sim.drones.get(req.drone_id)
+    if drone is None:
+        raise HTTPException(404, f"Drone not found: {req.drone_id}")
+    # Override sim state with real hardware values
+    if req.health is not None:
+        drone.health = req.health
+    if req.pos is not None:
+        drone.position = Vec2(req.pos.x, req.pos.y)
+    if req.battery_pct is not None:
+        drone.battery_pct = req.battery_pct
+    return {"injected": True, "drone_id": req.drone_id}
 
 
 # ─── Edge AI benchmarks ───────────────────────────────────────────────────────
@@ -360,6 +389,7 @@ async def inject_hil_telemetry(sid: str, payload: dict):
 @app.post("/benchmark")
 async def run_benchmark(req: BenchmarkRequest):
     from firmware.tinyml.inference import EdgeInferenceEngine
+    _check_edge_target(req.model_name, req.mcu_type)
     engine = EdgeInferenceEngine(req.mcu_type, req.bits, budget_ms=20.0)
     result = engine.benchmark(req.model_name, req.n_runs)
     return result
@@ -367,6 +397,7 @@ async def run_benchmark(req: BenchmarkRequest):
 @app.post("/benchmark/compare")
 async def compare_quantizations(model_name: str = "obstacle_detector", mcu_type: str = "esp32"):
     from firmware.tinyml.inference import EdgeInferenceEngine
+    _check_edge_target(model_name, mcu_type)
     engine = EdgeInferenceEngine(mcu_type, 8)
     return {"comparisons": engine.compare_quantizations(model_name, n_runs=50)}
 
@@ -469,11 +500,23 @@ async def websocket_endpoint(websocket: WebSocket, sid: str):
         while True:
             try:
                 data = await asyncio.wait_for(websocket.receive_text(), timeout=30.0)
-                msg = json.loads(data)
+                # A malformed message from one client must not tear down its
+                # socket with an unhandled exception; answer with an error.
+                try:
+                    msg = json.loads(data)
+                    if not isinstance(msg, dict):
+                        raise ValueError("expected a JSON object")
+                except ValueError as e:
+                    await websocket.send_text(json.dumps({"type": "error", "error": f"bad message: {e}"}))
+                    continue
 
                 if msg.get("type") == "command":
-                    team = TeamID[msg.get("team", "RED").upper()]
-                    s.orchestrator.issue_nlp_command(msg.get("text", ""), team)
+                    try:
+                        team = TeamID[str(msg.get("team", "RED")).upper()]
+                    except KeyError:
+                        await websocket.send_text(json.dumps({"type": "error", "error": f"unknown team: {msg.get('team')}"}))
+                        continue
+                    s.orchestrator.issue_nlp_command(str(msg.get("text", "")), team)
 
                 elif msg.get("type") == "ping":
                     await websocket.send_text(json.dumps({"type": "pong"}))

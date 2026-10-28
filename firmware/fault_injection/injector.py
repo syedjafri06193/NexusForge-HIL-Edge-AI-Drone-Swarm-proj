@@ -6,9 +6,8 @@ Each fault type mirrors something that actually happens on ESP32/STM32 hardware.
 
 import random
 import time
-import math
 from dataclasses import dataclass, field
-from typing import List, Optional, Callable, Dict
+from typing import List, Optional, Callable
 from enum import Enum
 
 

@@ -1,4 +1,6 @@
 # NexusForge
+
+[![CI](https://github.com/syedjafri06193/NexusForge-HIL-Autonomous-Edge-AI-Drone-Swarm-Arena-proj/actions/workflows/ci.yml/badge.svg)](https://github.com/syedjafri06193/NexusForge-HIL-Autonomous-Edge-AI-Drone-Swarm-Arena-proj/actions/workflows/ci.yml)
 ### HIL Autonomous Edge-AI Drone Swarm Arena
 
 A real-time multi-agent combat simulator bridging **edge AI**, **distributed
@@ -46,7 +48,7 @@ Mosquitto ──────► FastAPI backend ─────┤
 
 ```bash
 pip install -r backend/requirements.txt
-pytest                                                       # 111 tests
+pytest                                                       # 120 tests
 python demos/run_demo.py --teams 4 --drones 16 --ticks 600 --faults
 ```
 
@@ -63,7 +65,7 @@ docker compose up -d
 
 ```bash
 uvicorn backend.api.main:app --reload --port 8000
-cd dashboard && npm install && npm run dev
+cd dashboard && npm ci && npm run dev
 ```
 
 Set `ANTHROPIC_API_KEY` to use Claude for richer command parsing; without it
@@ -73,6 +75,7 @@ the NLP interface falls back to the built-in keyword parser.
 
 ```
 .
+├── 1—Documentation/       architecture, getting started, API reference, HIL, configuration, testing
 ├── simulation/engine/     sim.py — physics, weapons, hazards, control points
 ├── agents/
 │   ├── behaviors/         behavior tree nodes and drone profiles
@@ -158,13 +161,19 @@ the NLP interface falls back to the built-in keyword parser.
 
 | Quantization | Latency p50 | Accuracy | Energy / inference | Budget met |
 |---|---|---|---|---|
-| 32-bit | 85 ms | 87.0% | 20.4 µJ | 0% |
-| 16-bit | 47 ms | 86.5% | 11.3 µJ | 36% |
-| **8-bit** | **24 ms** | **85.0%** | **5.8 µJ** | **78%** |
-| 4-bit | 14 ms | 81.0% | 3.4 µJ | 98% |
+| 32-bit | 85 ms | 87.0% | 20.4 mJ | 0% |
+| 16-bit | 47 ms | 86.5% | 11.3 mJ | 36% |
+| **8-bit** | **24 ms** | **85.0%** | **5.8 mJ** | **78%** |
+| 4-bit | 14 ms | 81.0% | 3.4 mJ | 98% |
 
 8-bit is the sweet spot: 3.5× faster than 32-bit for a 2-point accuracy drop.
 These figures come from the simulator's model, not measurements on hardware.
+
+## Documentation
+
+All documentation lives in [`1—Documentation/`](1—Documentation/README.md):
+architecture, getting started, configuration, the full REST and WebSocket
+API reference, hardware-in-the-loop and testing.
 
 ## License
 

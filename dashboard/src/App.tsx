@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { useNexusStore } from './store/nexus';
 import { useSimWebSocket } from './hooks/useSimWebSocket';
 import { ArenaCanvas } from './components/ArenaCanvas';
-import { Arena3DView } from './components/three/Arena3D';
+// The 3D view pulls in three.js (~1 MB); load it only when it is selected.
+const Arena3DView = lazy(() =>
+  import('./components/three/Arena3D').then(m => ({ default: m.Arena3DView })));
 import AnalyticsPage from './pages/AnalyticsPage';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -37,7 +39,9 @@ function AppInner() {
 
         {/* Arena */}
         <div className="flex-1 min-w-0 relative">
-          {store.viewMode === '3d' ? <Arena3DView /> : <ArenaCanvas />}
+          {store.viewMode === '3d'
+            ? <Suspense fallback={<div className="p-4 text-xs font-mono text-gray-500">Loading 3D view…</div>}><Arena3DView /></Suspense>
+            : <ArenaCanvas />}
           {showBenchmark && (
             <div className="absolute inset-0 bg-black/80 backdrop-blur-sm z-10 overflow-auto">
               <BenchmarkPanel onClose={() => setShowBenchmark(false)} />
@@ -54,7 +58,8 @@ function AppInner() {
         <div className="flex flex-col gap-1 w-64 flex-shrink-0">
           <CommandTerminal />
           <DroneInspector />
-          <LeaderboardPanel rows={store.drones
+          {/* Copy before sorting: Array#sort mutates, and store.drones is store state. */}
+          <LeaderboardPanel rows={[...store.drones]
             .sort((a, b) => b.kills - a.kills)
             .map(d => ({ id: d.id, team: d.team, kills: d.kills, deaths: d.hits_taken, damage: 0, alive: d.state !== 'dead' }))
           } />
@@ -67,7 +72,8 @@ function AppInner() {
 // ─── Top bar ──────────────────────────────────────────────────────────────────
 
 function TopBar() {
-  const { sessionId, connected, elapsed, tick, setShowBenchmark, showBenchmark, disconnect } = useNexusStore();
+  const store = useNexusStore();
+  const { sessionId, connected, elapsed, tick, setShowBenchmark, showBenchmark, disconnect } = store;
 
   const pauseSession = async () => {
     await fetch(`${API}/sessions/${sessionId}/pause`, { method: 'POST' });

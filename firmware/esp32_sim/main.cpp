@@ -176,7 +176,9 @@ void telemetryTask(void* param) {
 
     JsonObject power = doc.createNestedObject("power");
     power["battery_pct"] = roundf(drone.battery_pct * 10) / 10;
-    power["battery_mv"]  = (int)(3.3f + drone.battery_pct / 100.0f * 0.9f * 1000);
+    // 3.3 V empty .. 4.2 V full (LiPo), in millivolts. The scale must apply to
+    // the whole voltage, not only the battery term.
+    power["battery_mv"]  = (int)((3.3f + drone.battery_pct / 100.0f * 0.9f) * 1000);
 
     JsonObject compute = doc.createNestedObject("compute");
     compute["cpu_load_pct"] = 30 + (infer.latency_us / 1000);

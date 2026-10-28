@@ -15,7 +15,7 @@ import argparse
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from simulation.engine.sim import Simulation, TeamID, DT
-from agents.swarm.orchestrator import SwarmOrchestrator, SwarmCommand, MissionType, Formation
+from agents.swarm.orchestrator import SwarmOrchestrator
 from firmware.protocols.hil_mqtt import HILManager
 from firmware.tinyml.inference import EdgeInferenceEngine
 from firmware.fault_injection.injector import FaultInjector, FaultScenarios
@@ -120,7 +120,7 @@ def run_demo(args):
 
     if fault_injector:
         fstatus = fault_injector.get_status()
-        print(f"\n── Fault Injection ──────────────────────────────────────────")
+        print("\n── Fault Injection ──────────────────────────────────────────")
         print(f"  Total injected: {fstatus['total_injected']} | Active: {len(fstatus['active'])}")
 
     print("\n── Swarm AI Status ──────────────────────────────────────────")

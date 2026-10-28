@@ -1,13 +1,11 @@
 """Tests for behavior tree AI and swarm orchestrator."""
 
-import pytest
 import sys
 import os
-import math
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../.."))
 
 from simulation.engine.sim import (
-    Drone, Simulation, Vec2, TeamID, DroneState, ARENA_W, ARENA_H,
+    Simulation, Vec2, TeamID, DroneState, ARENA_W, ARENA_H,
 )
 from agents.behaviors.behavior_tree import (
     run_behavior_tree,
@@ -57,13 +55,13 @@ class TestBTConditions:
         assert IsOutnumbered().tick(self.drone, self.sim) == Status.SUCCESS
 
     def test_has_enemy_in_weapon_range(self):
-        from agents.behaviors.behavior_tree import HasEnemyInWeaponRange, WEAPON_RANGE
+        from agents.behaviors.behavior_tree import WEAPON_RANGE
         self.drone.visible_enemies = [self.enemy]
         self.enemy.position = Vec2(self.drone.position.x + WEAPON_RANGE - 5, self.drone.position.y)
         assert HasEnemyInWeaponRange().tick(self.drone, self.sim) == Status.SUCCESS
 
     def test_enemy_out_of_weapon_range(self):
-        from agents.behaviors.behavior_tree import HasEnemyInWeaponRange, WEAPON_RANGE
+        from agents.behaviors.behavior_tree import WEAPON_RANGE
         self.drone.visible_enemies = [self.enemy]
         self.enemy.position = Vec2(self.drone.position.x + WEAPON_RANGE + 50, self.drone.position.y)
         assert HasEnemyInWeaponRange().tick(self.drone, self.sim) == Status.FAILURE
