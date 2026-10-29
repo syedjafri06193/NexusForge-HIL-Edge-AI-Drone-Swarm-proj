@@ -5,7 +5,7 @@ import {
   PolarAngleAxis, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from 'recharts';
 import { Activity, Zap, Radio, AlertTriangle, Play, RotateCcw } from 'lucide-react';
-import { useNexusStore } from '../store/nexus';
+import { useNexusStore, type TeamName } from '../store/nexus';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -83,7 +83,7 @@ export default function AnalyticsPage({ onClose }: { onClose: () => void }) {
     kills: stats.kills || 0,
     latency: Math.round(stats.avg_latency || 0),
     inference: +(stats.avg_inference || 0).toFixed(2),
-    score: scores[team as any] || 0,
+    score: scores[team as TeamName] || 0,
   })) : [];
 
   // Build per-drone latency chart data

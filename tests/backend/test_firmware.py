@@ -7,12 +7,12 @@ import time
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../.."))
 
 from firmware.tinyml.inference import (
-    EdgeInferenceEngine, DroneInferencePool, MODELS, MCU_PROFILES, ModelSpec,
+    EdgeInferenceEngine, DroneInferencePool, MODELS, MCU_PROFILES,
 )
 from firmware.fault_injection.injector import (
     FaultInjector, FaultEvent, FaultType, FaultScenarios,
 )
-from simulation.engine.sim import Simulation, TeamID, DroneState
+from simulation.engine.sim import Simulation
 
 
 # ─── ModelSpec ───────────────────────────────────────────────────────────────
@@ -263,3 +263,12 @@ class TestFaultInjector:
         fault = self.injector.inject_random(self.drone_ids)
         assert len(self.injector.fault_history) == 1
         assert self.injector.fault_history[0]["type"] == fault.fault_type.value
+
+
+def test_energy_is_power_times_latency_in_microjoules():
+    """mW x ms = uJ. Guards against the old extra x1000 factor."""
+    from firmware.tinyml.inference import EdgeInferenceEngine, MCU_PROFILES
+    engine = EdgeInferenceEngine("esp32", 8)
+    r = engine.infer("obstacle_detector")
+    expected = MCU_PROFILES["esp32"]["mw_active"] * r.latency_ms
+    assert abs(r.energy_uj - expected) <= max(0.01, expected * 1e-3)

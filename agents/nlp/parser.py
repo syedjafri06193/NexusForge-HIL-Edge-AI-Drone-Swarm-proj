@@ -18,9 +18,9 @@ except ImportError:
 
 from agents.swarm.orchestrator import (
     SwarmCommand, MissionType, Formation, TeamID,
-    parse_nlp_command, _LOCATION_KEYWORDS,
+    parse_nlp_command,
 )
-from simulation.engine.sim import Vec2, ARENA_W, ARENA_H
+from simulation.engine.sim import Vec2
 
 
 SYSTEM_PROMPT = """You are the tactical AI for NexusForge, a drone swarm combat arena.
@@ -114,7 +114,7 @@ def parse_with_claude(text: str, issuing_team: TeamID) -> Optional[ParsedCommand
             priority=priority, reasoning=reasoning, source="claude",
         )
 
-    except Exception as e:
+    except Exception:
         # Claude unavailable or parse error — fall through to keyword parser
         return None
 

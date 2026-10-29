@@ -6,9 +6,8 @@ Models power draw, latency, and accuracy degradation at different bit widths.
 
 import math
 import random
-import time
 import numpy as np
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
 
 
@@ -184,7 +183,9 @@ class EdgeInferenceEngine:
         power_mw = self.mcu["mw_active"]
 
         # Energy cost
-        energy_uj = power_mw * latency * 1000  # mW * ms = µJ
+        # mW × ms = µJ exactly (1e-3 J/s × 1e-3 s = 1e-6 J). This used to
+        # multiply by a further 1000, overstating energy a thousandfold.
+        energy_uj = power_mw * latency
 
         # Accuracy
         accuracy = model.accuracy_at_bits(self.bits)

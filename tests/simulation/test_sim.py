@@ -1,15 +1,12 @@
 """Tests for simulation engine: physics, drones, arena, projectiles."""
 
-import math
 import time
-import pytest
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../.."))
 
 from simulation.engine.sim import (
-    Vec2, Drone, Arena, Simulation, Projectile,
-    TeamID, DroneState, DroneConfig,
+    Vec2, Drone, Arena, Simulation, TeamID, DroneState, DroneConfig,
     ARENA_W, ARENA_H, MAX_SPEED, COLLISION_R, HEALTH_MAX, SHIELD_MAX, DT,
 )
 

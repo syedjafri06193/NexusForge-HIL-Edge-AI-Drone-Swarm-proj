@@ -25,7 +25,11 @@ export function useSimWebSocket(sessionId: string | null) {
       ws.onmessage = (e) => {
         try {
           const data = JSON.parse(e.data);
-          if (data.type !== 'pong') applySnapshot(data);
+          // Control messages (ping/pong/error) carry no state; applying one
+          // as a snapshot would blank the arena until the next broadcast.
+          if (data.type === 'ping' || data.type === 'pong') return;
+          if (data.type === 'error') { console.warn('[nexusforge]', data.error); return; }
+          applySnapshot(data);
         } catch {}
       };
 

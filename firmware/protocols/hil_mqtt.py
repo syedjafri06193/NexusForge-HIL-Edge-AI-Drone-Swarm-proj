@@ -5,17 +5,15 @@ Generates realistic telemetry with jitter, packet loss, and power modeling.
 Real boards can connect to the same MQTT broker and inject real telemetry.
 """
 
-import asyncio
 import json
 import math
 import random
 import time
-import uuid
-from dataclasses import dataclass, field
-from typing import Callable, Dict, List, Optional
+from dataclasses import dataclass
+from typing import Dict, List, Optional
 
 try:
-    import aiomqtt
+    import aiomqtt  # noqa: F401  (availability probe)
     MQTT_AVAILABLE = True
 except ImportError:
     MQTT_AVAILABLE = False

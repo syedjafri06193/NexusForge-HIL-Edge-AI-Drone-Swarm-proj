@@ -7,8 +7,7 @@ and caches recent data in Redis for the dashboard.
 import asyncio
 import json
 import os
-import time
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Any
 
 try:
     import asyncpg
@@ -69,7 +68,7 @@ class TelemetryWriter:
         if self._pool:
             await self._pool.close()
         if self._redis:
-            await self._redis.close()
+            await self._redis.aclose()
 
     # ─── Buffer writes ───────────────────────────────────────────────────────
 
@@ -195,7 +194,7 @@ class TelemetryWriter:
                      r["inference_ms"], r["latency_ms"], r["state"])
                     for r in batch
                 ])
-        except Exception as e:
+        except Exception:
             # Put back if failed
             self._drone_buf = batch + self._drone_buf
 
@@ -275,7 +274,7 @@ class TelemetryWriter:
                     GROUP BY bucket ORDER BY bucket
                 """, session_id, drone_id)
                 return [dict(r) for r in rows]
-        except Exception as e:
+        except Exception:
             return []
 
     async def query_power_profile(self, session_id: str) -> list:
@@ -298,5 +297,5 @@ class TelemetryWriter:
                     ORDER BY avg_power_mw DESC
                 """, session_id)
                 return [dict(r) for r in rows]
-        except Exception as e:
+        except Exception:
             return []

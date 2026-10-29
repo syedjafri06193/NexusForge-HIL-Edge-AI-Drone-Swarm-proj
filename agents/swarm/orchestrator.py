@@ -4,18 +4,16 @@ Higher-level swarm coordination: formation control, mission planning,
 natural-language command parsing, and RL-based policy routing.
 """
 
-import asyncio
 import math
 import random
 import time
-import json
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 from enum import Enum
 
 from simulation.engine.sim import (
-    Drone, Simulation, Vec2, TeamID, DroneState,
-    ARENA_W, ARENA_H, MAX_SPEED,
+    Simulation, Vec2, TeamID, DroneState,
+    ARENA_W, ARENA_H,
 )
 
 

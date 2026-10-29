@@ -4,17 +4,14 @@ Each drone runs its own behavior tree every tick, simulating
 edge-AI decision making under latency and power constraints.
 """
 
-import math
 import random
-import time
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from simulation.engine.sim import Drone, Simulation, Vec2
 
 from simulation.engine.sim import (
-    DroneState, Vec2, MAX_SPEED, WEAPON_RANGE, SENSOR_RANGE,
-    ARENA_W, ARENA_H, DroneConfig,
+    DroneState, Vec2, MAX_SPEED, WEAPON_RANGE, ARENA_W, ARENA_H,
 )
 
 
