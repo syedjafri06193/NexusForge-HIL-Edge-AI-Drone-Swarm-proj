@@ -175,6 +175,46 @@ All documentation lives in [`1—Documentation/`](1—Documentation/README.md):
 architecture, getting started, configuration, the full REST and WebSocket
 API reference, hardware-in-the-loop and testing.
 
+<!-- project-metrics:start -->
+## Project Metrics
+
+[![Stars](https://img.shields.io/github/stars/syedjafri06193/NexusForge-HIL-Edge-AI-Drone-Swarm-proj?style=flat-square)](https://github.com/syedjafri06193/NexusForge-HIL-Edge-AI-Drone-Swarm-proj/stargazers) [![Forks](https://img.shields.io/github/forks/syedjafri06193/NexusForge-HIL-Edge-AI-Drone-Swarm-proj?style=flat-square)](https://github.com/syedjafri06193/NexusForge-HIL-Edge-AI-Drone-Swarm-proj/forks) [![Open issues](https://img.shields.io/github/issues/syedjafri06193/NexusForge-HIL-Edge-AI-Drone-Swarm-proj?style=flat-square)](https://github.com/syedjafri06193/NexusForge-HIL-Edge-AI-Drone-Swarm-proj/issues) [![Last commit](https://img.shields.io/github/last-commit/syedjafri06193/NexusForge-HIL-Edge-AI-Drone-Swarm-proj/improvements?style=flat-square)](https://github.com/syedjafri06193/NexusForge-HIL-Edge-AI-Drone-Swarm-proj/commits/improvements) [![Commits](https://img.shields.io/github/commit-activity/t/syedjafri06193/NexusForge-HIL-Edge-AI-Drone-Swarm-proj?style=flat-square)](https://github.com/syedjafri06193/NexusForge-HIL-Edge-AI-Drone-Swarm-proj/commits/improvements) [![Top language](https://img.shields.io/github/languages/top/syedjafri06193/NexusForge-HIL-Edge-AI-Drone-Swarm-proj?style=flat-square)](https://github.com/syedjafri06193/NexusForge-HIL-Edge-AI-Drone-Swarm-proj) [![Repo size](https://img.shields.io/github/repo-size/syedjafri06193/NexusForge-HIL-Edge-AI-Drone-Swarm-proj?style=flat-square)](https://github.com/syedjafri06193/NexusForge-HIL-Edge-AI-Drone-Swarm-proj)
+
+### Code
+
+| Metric | Value |
+|---|---|
+| Lines of code | 5,573 |
+| Source files | 37 |
+| Tracked files | 74 |
+| Documentation | 8 Markdown files (2,994 words) |
+| Commits | 6 |
+| Contributors | 2 |
+| Active | 2026-06-04 → 2026-10-28 |
+
+| Language | Lines | Share |
+|---|---:|---:|
+| Python | 3,555 | 63.8% |
+| TSX | 1,229 | 22.1% |
+| YAML | 276 | 5.0% |
+| TypeScript | 183 | 3.3% |
+| C++ | 139 | 2.5% |
+| Transact-SQL | 76 | 1.4% |
+
+### Performance
+
+| Metric | Result |
+|---|---|
+| 8-bit model on simulated ESP32, p50 latency | **24 ms** (3.5× faster than 32-bit) |
+| 8-bit accuracy / energy | 85.0% / 5.8 µJ per inference |
+| Latency budget met (8-bit) | 78% |
+| Swarm simulation | Up to 128 drones at 60 FPS |
+
+<sub>Simulated figures (from the project's own simulator), recorded in [`README.md`](README.md).</sub>
+
+<sub>Code stats as of 2026-10-28, counted with pygount (comments and blank lines excluded). Badges update live.</sub>
+<!-- project-metrics:end -->
+
 ## License
 
 [MIT](LICENSE)
